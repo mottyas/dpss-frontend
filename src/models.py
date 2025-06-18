@@ -1,6 +1,22 @@
 from fastui import components as c
 from pydantic import BaseModel
 
+class ProjectConfigAddDTO(BaseModel):
+    name: str | None
+    type: str | None
+    dir_path: str | None
+    description: str | None = None
+    scan_config_id: int
+
+class ProjectConfigGetDTO(ProjectConfigAddDTO):
+    id: int
+
+class TableProjectConfigGetDTO(BaseModel):
+    id: c.Link
+    name: str
+    type: str
+    dir_path: str
+    description: str
 
 class ScanConfigAddDTO(BaseModel):
     name: str
@@ -14,16 +30,15 @@ class ScanConfigAddDTO(BaseModel):
 
 class ScanConfigGetDTO(ScanConfigAddDTO):
     id: int
+    projects: list[ProjectConfigGetDTO]
+    # reports: list['ReportGetDTO']
 
-class ProjectConfigAddDTO(BaseModel):
-    name: str | None
-    type: str | None
-    dir_path: str | None
-    description: str | None = None
-    scan_config_id: int
-
-class ProjectConfigGetDTO(ProjectConfigAddDTO):
-    id: int
+class TableScanConfigDTO(BaseModel):
+    id: c.Link
+    name: str
+    host: str
+    user: str
+    date: str
 
 class AffectedDTO(BaseModel):
     name: str
@@ -55,6 +70,13 @@ class RatingGetDTO(BaseModel):
     source_url: str
     vector: str
     version: float
+
+class TableRatingDTO(BaseModel):
+    score: float
+    severity: str
+    vector: str
+    source_name: str
+    source_url: c.Link
 
 class ReferenceGetDTO(BaseModel):
     id: int
@@ -91,10 +113,14 @@ class ReportAddDTO(BaseModel):
 class ReportGetDTO(BaseModel):
     id: int
     created_at: str | None
-    # projects: list[ProjectVulnersGetDTO] | None
-    # dir_path: str | None
-    # description: str | None = None
     scan_config_id: int
+    # scan_config: ScanConfigGetDTO
+
+class TableReportDTO(BaseModel):
+    report_id: c.Link
+    created_at: str
+    scan_conf_id: c.Link
+    # scan_conf_id: c.
 
 class ReportAffectDTO(BaseModel):
     affected: AffectedGetDTO
@@ -111,6 +137,8 @@ class ReportFullDTO(ReportGetDTO):
 
 class TableAffectWithVulnerDTO(AffectedDTO):
     vulner: c.Link
+    score: float | None = None
+    severity: str | None = None
 
 
 def count_vulnerable_interval(affected: AffectedGetDTO) -> str:
@@ -128,3 +156,14 @@ class VulnerBasicGetDTO(BaseModel):
     source_url: str | None = None
     score: float | None = None
     severity: str | None = None
+
+class TableVulnerBasicDTO(VulnerBasicGetDTO):
+    global_identifier: c.Link
+    source_url: c.Link
+
+class VulnersBasicsGetDTO(BaseModel):
+    vulners: list[VulnerBasicGetDTO]
+    count: int
+
+class AddItemResponseDTO(BaseModel):
+    created_item_id: int

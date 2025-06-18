@@ -3,7 +3,7 @@ from fastui import components as c
 from fastui.events import GoToEvent
 
 
-def gen_go_to_link(url: str, text: str | None = None) -> c.Link:
+def gen_go_to_link(url: str, text: str | int | None = None) -> c.Link:
     """
     Функция генерации просто GoTo ссылки
 
@@ -15,4 +15,4 @@ def gen_go_to_link(url: str, text: str | None = None) -> c.Link:
     if not text:
         text = url
 
-    return c.Link(components=[c.Text(text=text)], on_click=GoToEvent(url=url))
+    return c.Link(components=[c.Text(text=str(text))], on_click=GoToEvent(url=url))

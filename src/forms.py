@@ -8,3 +8,4 @@ class ScanConfAddForm(BaseModel):
     user: str
     password: str
     description: str = ''
+    port: str = '22'

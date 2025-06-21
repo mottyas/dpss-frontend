@@ -1,4 +1,4 @@
-
+import logging
 from datetime import date
 from typing import Annotated
 
@@ -7,14 +7,18 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 from fastui import FastUI, AnyComponent, prebuilt_html, components as c
 from fastui.components.display import DisplayMode, DisplayLookup
-from fastui.events import GoToEvent, BackEvent
+from fastui.events import GoToEvent, BackEvent, PageEvent
 from fastui.forms import fastui_form
 from pydantic import BaseModel, Field
 import uvicorn
 
 from config import BackendServiceConfig as bsc
 from const import BASE_NAVBAR, INDEX_PAGE_TEXT
-from forms import ScanConfAddForm
+from forms import (
+    ScanConfAddForm,
+    ProjectScanConfAddForm,
+    RunScannerForm,
+)
 from functions import gen_go_to_link
 from templates import (
     VulnerTableData,
@@ -31,6 +35,7 @@ from models import (
     TableAffectWithVulnerDTO,
     VulnerGetDTO,
     RatingGetDTO,
+    ProjectScanConfigAddDTO,
     TableProjectConfigGetDTO,
     ProjectConfigGetDTO,
     AffectedGetDTO,
@@ -77,7 +82,7 @@ class FilterReportForm(BaseModel):
 def get_reports(page: int = 1, severity: str | None = None) -> list[AnyComponent]:
     """Получение списка отчетов"""
 
-    page_size = 2
+    page_size = 10
 
     reports_response = requests.get(url=bsc.service_url('scan/reports')).json()
 
@@ -86,7 +91,7 @@ def get_reports(page: int = 1, severity: str | None = None) -> list[AnyComponent
         for row in reports_response
     ]
 
-    print(f'{reports=}')
+    # logging.error(f'{reports=}')
 
     table_reports = [
         TableReportDTO(
@@ -128,14 +133,17 @@ def get_reports(page: int = 1, severity: str | None = None) -> list[AnyComponent
     ]
 
 @app.get('/api/reports/{report_id}', response_model=FastUI, response_model_exclude_none=True)
-def get_report(report_id: int) -> list[AnyComponent]:
+def get_report(report_id: int, page: int = 1) -> list[AnyComponent]:
     """Получение отчета по идентификатору"""
+    page_size = 10
 
     report = requests.get(bsc.service_url(f'scan/reports/id/{report_id}')).json()
 
     report_dto = ReportFullDTO.model_validate(report)
 
     result_affects = []
+    # print(f'{report_dto.affects_projects=}')
+    print(f'{len(report_dto.affects_projects)=}')
     for project in report_dto.affects_projects:
         affects = [
             TableAffectWithVulnerDTO.model_validate(
@@ -161,7 +169,7 @@ def get_report(report_id: int) -> list[AnyComponent]:
                 c.Heading(text=f'Имя проекта: {project.project.name}', level=4),
                 c.Paragraph(text=f'Тип проекта: {project.project.type}'),
                 c.Table(
-                    data=affects,
+                    data=affects[(page - 1) * page_size: page * page_size],
                     data_model=TableAffectWithVulnerDTO,
                     columns=[
                         DisplayLookup(field='name', table_width_percent=10),
@@ -171,7 +179,9 @@ def get_report(report_id: int) -> list[AnyComponent]:
                         DisplayLookup(field='score', table_width_percent=10),
                         DisplayLookup(field='severity', table_width_percent=10),
                     ]
-                )
+                ),
+                c.Pagination(page=page, page_size=page_size, total=len(affects)),
+
             ]
         )
 
@@ -192,6 +202,8 @@ def get_report(report_id: int) -> list[AnyComponent]:
         c.Paragraph(text=f'Описание конфигурации:'),
         c.Paragraph(text=f'{report_dto.scan_config.description}'),
         *result_affects,
+        # c.Pagination(page=page, page_size=page_size, total=len(report_dto.affects_projects)),
+
     ]
 
     return [
@@ -482,7 +494,7 @@ def get_scan_config(conf_id: int, page: int = 1) -> list[AnyComponent]:
     scan_conf = requests.get(url=bsc.service_url(f'scan/confs/id/{conf_id}'), headers=headers).json()
     scan_conf = ScanConfigGetDTO(**scan_conf)
 
-    print(f'{scan_conf=}')
+    # print(f'{scan_conf=}')
 
     table_data = [
         TableProjectConfigGetDTO(
@@ -521,29 +533,105 @@ def get_scan_config(conf_id: int, page: int = 1) -> list[AnyComponent]:
                 c.Heading(text=f'Имя пользователя: {scan_conf.user}', level=6),
                 c.Heading(text=f'Сканируемый хост: {scan_conf.host}', level=6),
                 c.Heading(text=f'Пароль пользователя: {scan_conf.secret}', level=6),
-                c.Button(text='Удалить'),
+                c.Button(
+                    text='Удалить',
+                    on_click=PageEvent(name='static-modal'),
+                    # class_name='+ ms-2',
+                ),
                 c.Text(text=' '),
                 c.Button(text='Изменить', html_type='button'),
                 c.Text(text=' '),
-                c.Button(text='Добавить проект', html_type='button'),
+                c.Button(text='Добавить проект', html_type='button', on_click=GoToEvent(url=f'/scan/configs/{conf_id}/add_project')),
                 c.Text(text=' '),
-                c.Button(text='Запуск сканирования', html_type='button'),
-
+                # c.Button(text='Запуск сканирования', html_type='button', on_click=GoToEvent(url=f'/scan/run/{conf_id}')), #on_click=),
+                c.Div(
+                    components=[
+                        c.Text(text='Запуск сканирования: '),
+                        c.ModelForm(
+                            model=RunScannerForm,
+                            display_mode='default',
+                            submit_url=f'/api/scan/run/{conf_id}',
+                        )
+                    ]
+                ),
                 c.Paragraph(text=' '),
                 project_confs_table,
                 c.Pagination(page=page, page_size=page_size, total=len(table_data)),
-
+                c.Modal(
+                    title='Some static modal',
+                    body=[c.Paragraph(text='This is some static content that was set when the modal was defined.')],
+                    footer=[
+                        c.Button(text='Close', on_click=PageEvent(name='static-modal', clear=True)),
+                    ],
+                    open_trigger=PageEvent(name='static-modal'),
+                ),
             ]
         )
     ]
+
+
+@app.post('/api/scan/run/{conf_id}', response_model=FastUI, response_model_exclude_none=True)
+def run_scanner(conf_id: int, form: Annotated[RunScannerForm, fastui_form(RunScannerForm)]) -> list[AnyComponent]:
+
+    headers = {
+        'accept': 'application/json',
+    }
+
+    response = requests.post(url=bsc.service_url(f'scan/run/{conf_id}'), headers=headers) #, json=data.model_dump(mode='json'))
+    validated_response = AddItemResponseDTO.model_validate(response.json())
+
+    return [c.FireEvent(event=BackEvent())]
+
+
+@app.post('/api/scan/configs/{conf_id}/add_project', response_model=FastUI, response_model_exclude_none=True)
+def add_new_scan_project_config(conf_id: int, form: Annotated[ProjectScanConfAddForm, fastui_form(ProjectScanConfAddForm)]) -> list[AnyComponent]:
+
+    data = ProjectScanConfigAddDTO(
+        name=form.name,
+        type=form.type.value,
+        dir_path=form.dir_path,
+        description=form.description,
+        scan_config_id=conf_id,
+    )
+
+    headers = {
+        'Content-Type': 'application/json',
+        'accept': 'application/json',
+    }
+
+    response = requests.post(url=bsc.service_url(f'scan/projects'), headers=headers, json=data.model_dump(mode='json'))
+    validated_response = AddItemResponseDTO.model_validate(response.json())
+
+    return [c.FireEvent(event=GoToEvent(url=f'/scan/projects/{validated_response.created_item_id}'))]
+
+
+@app.get('/api/scan/configs/{conf_id}/add_project', response_model=FastUI, response_model_exclude_none=True)
+def add_new_scan_project_config_form(conf_id: int) -> list[AnyComponent]:
+    return [
+        BASE_NAVBAR,
+        c.Page(
+            components=[
+                c.Link(
+                    components=[c.Text(text='Вернуться назад')], on_click=BackEvent()
+                ),
+                c.Heading(text='Добавить конфигурацию проекта', level=2),
+                c.ModelForm(
+                    model=ProjectScanConfAddForm,
+                    display_mode='page',
+                    submit_url=f'/api/scan/configs/{conf_id}/add_project',
+                )
+            ]
+        ),
+    ]
+
 
 @app.post('/api/scan/configs/add', response_model=FastUI, response_model_exclude_none=True)
 def add_new_scan_config(form: Annotated[ScanConfAddForm, fastui_form(ScanConfAddForm)]) -> list[c.FireEvent]:
     """Добавление новой конфигурации сканирования"""
 
-    print(f'{form=}')
+    # print(f'{form=}')
     kek = dict(form)
-    print(f'{kek=}')
+    # print(f'{kek=}')
 
     data = ScanConfigAddDTO(
         name=form.name,
@@ -560,10 +648,94 @@ def add_new_scan_config(form: Annotated[ScanConfAddForm, fastui_form(ScanConfAdd
     }
 
     response = requests.post(url=bsc.service_url('scan/confs'), headers=headers, json=data.model_dump(mode='json'))
-    print(f'response.json()={response.json()}')
+    # print(f'response.json()={response.json()}')
     validated_response = AddItemResponseDTO.model_validate(response.json())
 
     return [c.FireEvent(event=GoToEvent(url=f'/scan/configs/{validated_response.created_item_id}'))]
+
+
+# @app.post('/api/scan/run/{item_id}', response_model=FastUI, response_model_exclude_none=True)
+# def add_new_scan_config(item_id: int, form: Annotated[RunScannerForm, fastui_form(RunScannerForm)]) -> list[c.FireEvent]:
+#     response = requests.post(url=bsc.service_url(f'scan/run/{item_id}')) #headers=headers, json=data.model_dump(mode='json'))
+#
+#     return [c.FireEvent(event=GoToEvent(url=f'/reports'))]
+
+
+@app.get('/api/sandbox', response_model=FastUI, response_model_exclude_none=True)
+def get_sandbox() -> list[AnyComponent]:
+    """Получение страницы с песочницей"""
+    conf_id = 8
+    return [
+        c.PageTitle(text='DPSS SandBox Demo'),
+        BASE_NAVBAR,
+        c.Page(
+            components=[
+                c.Link(
+                    components=[c.Text(text='Вернуться назад')], on_click=BackEvent()
+                ),
+                # c.Div(
+                #     components=[
+                #         c.Heading(text='Dynamic Modal', level=2),
+                #         c.Markdown(
+                #             text=(
+                #                 'The button below will open a modal with content loaded from the server when '
+                #                 "it's opened using `ServerLoad`."
+                #             )
+                #         ),
+                #         c.Button(text='Show Dynamic Modal', on_click=PageEvent(name='run-scanner')),
+                #         c.Modal(
+                #             title='Dynamic Modal',
+                #             body=[c.ServerLoad(path=f'/scan/run/{conf_id}')],
+                #             footer=[
+                #                 c.Button(text='Close', on_click=PageEvent(name='dynamic-modal', clear=True)),
+                #             ],
+                #             open_trigger=PageEvent(name='run-scanner'),
+                #         ),
+                #     ],
+                #     class_name='border-top mt-3 pt-1',
+                # ),
+                c.Paragraph(text=''),
+
+                c.Div(
+                    components=[
+                        c.Text(text='Запуск сканирования: '),
+                        c.ModelForm(
+                            model=RunScannerForm,
+                            display_mode='default',
+                            submit_url=f'/api/scan/run/{conf_id}',
+                        )
+                    ]
+                )
+
+
+                # c.Div(
+                #     components=[
+                #         c.Button(text='Run Scanner', html_type='submit', on_click=PageEvent(name='server-load')),
+                #
+                #         c.ServerLoad(
+                #             path=f'/scan/run/{conf_id}',
+                #             load_trigger=PageEvent(name='server-load'),
+                #             method='POST',
+                #
+                #             # components=[c.Text(text='Run Scanner')],
+                #         ),
+                #     ],
+                #     # class_name='py-2',
+                # ),
+            ]
+        ),
+        c.Footer(
+            extra_text='FastUI Demo',
+            links=[
+                c.Link(
+                    components=[c.Text(text='Github')], on_click=GoToEvent(url='https://github.com/pydantic/FastUI')
+                ),
+                c.Link(components=[c.Text(text='PyPI')], on_click=GoToEvent(url='https://pypi.org/project/fastui/')),
+                c.Link(components=[c.Text(text='NPM')], on_click=GoToEvent(url='https://www.npmjs.com/org/pydantic/')),
+            ],
+        ),
+    ]
+
 
 
 @app.get('/{path:path}')
@@ -577,6 +749,6 @@ if __name__ == '__main__':
         host='0.0.0.0',
         port=8002,
         reload=True,
-        log_level='debug',
+        log_level='info',
         workers=1,
     )

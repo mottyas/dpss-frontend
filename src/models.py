@@ -28,6 +28,13 @@ class ScanConfigAddDTO(BaseModel):
     port: str | None = None
     # report_type: str
 
+class ProjectScanConfigAddDTO(BaseModel):
+    name: str
+    type: str
+    dir_path: str
+    description: str
+    scan_config_id: int
+
 class ScanConfigGetDTO(ScanConfigAddDTO):
     id: int
     projects: list[ProjectConfigGetDTO]

@@ -7,7 +7,7 @@ BASE_NAVBAR = c.Navbar(
     title_event=GoToEvent(url='/'),
     start_links=[
         c.Link(
-            components=[c.Text(text='Отчеты')], on_click=GoToEvent(url='/reports')
+            components=[c.Text(text='Отчеты')], on_click=GoToEvent(url='/reports/')
         ),
         # c.Link(
         #     components=[c.Text(text='Вернуться назад')], on_click=BackEvent()
@@ -16,7 +16,7 @@ BASE_NAVBAR = c.Navbar(
             components=[c.Text(text='Конфигурации сканирования')], on_click=GoToEvent(url='/scan/configs')
         ),
         c.Link(
-            components=[c.Text(text='База уязвимостей')], on_click=GoToEvent(url='/vulners')
+            components=[c.Text(text='База уязвимостей')], on_click=GoToEvent(url='/vulners/')
         ),
     ],
     end_links = [

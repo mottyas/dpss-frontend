@@ -1,6 +1,7 @@
+"""Модуль с базовыми UI элементами"""
+
 from fastui import AnyComponent, components as c
 from fastui.events import GoToEvent, BackEvent
-
 
 
 BASE_NAVBAR = c.Navbar(
@@ -92,3 +93,17 @@ def base_page(*components: AnyComponent, title: str | None = None) -> list[AnyCo
         ),
         base_footer(),
     ]
+
+def gen_ui_link(url: str, text: str | int | None = None) -> c.Link:
+    """
+    Функция генерации простой GoTo ссылки
+
+    :param url: URL адрес ссылки
+    :param text: Текст ссылки
+    :return: Объект ссылки Fast-UI
+    """
+
+    if not text:
+        text = url
+
+    return c.Link(components=[c.Text(text=str(text))], on_click=GoToEvent(url=url))

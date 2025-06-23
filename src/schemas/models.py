@@ -1,5 +1,8 @@
+"""Модуль с моделями данных"""
+
 from fastui import components as c
 from pydantic import BaseModel
+
 
 class ProjectConfigAddDTO(BaseModel):
     name: str | None
@@ -26,7 +29,6 @@ class ScanConfigAddDTO(BaseModel):
     description: str | None = None
     date: str | None = None
     port: str | None = None
-    # report_type: str
 
 class ProjectScanConfigAddDTO(BaseModel):
     name: str
@@ -38,7 +40,6 @@ class ProjectScanConfigAddDTO(BaseModel):
 class ScanConfigGetDTO(ScanConfigAddDTO):
     id: int
     projects: list[ProjectConfigGetDTO]
-    # reports: list['ReportGetDTO']
 
 class TableScanConfigDTO(BaseModel):
     id: c.Link
@@ -57,12 +58,8 @@ class AffectedDTO(BaseModel):
     end_value: str
     end_condition: str
 
-
 class AffectedGetDTO(AffectedDTO):
     id: int
-
-# class AffectedIdDTO(BaseModel):
-#     affected_id: int
 
 class AffectedProjectDTO(BaseModel):
     affected_id: int
@@ -121,13 +118,11 @@ class ReportGetDTO(BaseModel):
     id: int
     created_at: str | None
     scan_config_id: int
-    # scan_config: ScanConfigGetDTO
 
 class TableReportDTO(BaseModel):
     report_id: c.Link
     created_at: str
     scan_conf_id: c.Link
-    # scan_conf_id: c.
 
 class ReportAffectDTO(BaseModel):
     affected: AffectedGetDTO

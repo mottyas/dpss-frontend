@@ -1,6 +1,7 @@
+"""Модуль с моделями форм"""
 
 from enum import Enum
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 class ScanConfAddForm(BaseModel):
     name: str

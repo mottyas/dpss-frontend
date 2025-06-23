@@ -8,7 +8,7 @@ class BackendServiceConfig:
 
     protocol = os.getenv('BACKEND_SERVICE_PROTOCOL', 'http')
     host = os.getenv('BACKEND_SERVICE_HOST', 'localhost')
-    port = os.getenv('BACKEND_SERVICE_PORT', 8001)
+    port = os.getenv('BACKEND_SERVICE_PORT', 5000)
     api_version = os.getenv('API_VERSION', 'v1')
 
     @classmethod
@@ -21,7 +21,7 @@ class BackendServiceConfig:
 
     @classmethod
     def get_report_url(cls, item_id: int):
-        return cls.service_url(f'scan/reports/{item_id}')
+        return cls.service_url(f'scan/reports/id/{item_id}')
 
     @classmethod
     def get_vulners_url(cls):
@@ -61,11 +61,23 @@ class FrontendServiceConfig:
 
     @classmethod
     def get_vulner(cls, item_id: str):
-        return f'scan/run/{item_id}'
+        return f'/vulners/{item_id}'
+
+    @classmethod
+    def get_vulners(cls):
+        return f'/vulners/'
 
     @classmethod
     def get_report(cls, item_id: int):
         return f'/reports/{item_id}'
+
+    @classmethod
+    def get_reports(cls):
+        return '/reports/'
+
+    @classmethod
+    def get_scan_configs(cls):
+        return f'/scan/configs/'
 
     @classmethod
     def get_scan_config(cls, item_id: int):
@@ -98,20 +110,3 @@ class FrontendServiceConfig:
     @classmethod
     def submit_add_project_config_url(cls, conf_id: int):
         return f'/api/scan/configs/{conf_id}/add_project'
-
-
-# class LocalURLs(StrEnum):
-#     """Класс перечисление ручек фронтенда"""
-
-    # GET_VULNER_BY_ID_URL = '/vulners/{id}'
-    # GET_REPORT_URL = '/reports/{id}'
-    # GET_CONFIG_URL = '/scan/configs/{id}'
-
-    # GET_PROJECT_CONFIG_URL = '/scan/projects/{id}'
-
-    # ADD_PROJECT_CONFIG_URL = '/scan/configs/{conf_id}/add_project'
-    # SUBMIT_PROJECT_CONFIG_URL = '/api/scan/configs/{conf_id}/add_project'
-
-    # SUBMIT_SCAN_RUN_URL = '/api/scan/run/{conf_id}'
-    # SUBMIT_SCAN_CONFIG_ADD_URL = '/api/scan/configs/add'
-    # SUBMIT_SCAN_PROJECT_CONFIG_ADD_URL = '/api/scan/configs/{conf_id}/add_project'

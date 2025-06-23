@@ -21,10 +21,6 @@ for router in routers:
 @app.get('/api/', response_model=FastUI, response_model_exclude_none=True)
 def get_index() -> list[AnyComponent]:
     components = [
-        c.Link(
-            components=[c.Text(text='Вернуться назад')], on_click=BackEvent()
-        ),
-        c.Paragraph(text=''),
         c.Markdown(
             text=INDEX_PAGE_TEXT,
         ),
@@ -43,7 +39,7 @@ if __name__ == '__main__':
     uvicorn.run(
         app='main:app',
         host='0.0.0.0',
-        port=8002,
+        port=8000,
         reload=True,
         log_level='debug',
         workers=1,

@@ -1,0 +1,25 @@
+
+services:
+  frontend:
+    build: .
+    container_name: frontend
+    restart: always
+    ports:
+      - "8000:8000"
+    environment:
+      BACKEND_SERVICE_PROTOCOL: "http"
+      BACKEND_SERVICE_HOST: "backend.mynetwork"
+      BACKEND_SERVICE_PORT: 5000
+      API_VERSION: "v1"
+    networks:
+      mynetwork:
+        aliases:
+          - frontend.mynetwork
+
+volumes:
+  db_data:
+
+networks:
+  mynetwork:
+    external:
+      name: myglobalnetwork

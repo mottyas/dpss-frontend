@@ -1,5 +1,7 @@
 """Модуль сервиса работы с отчетами"""
 
+import logging
+
 import requests
 from fastui import AnyComponent
 from fastui import components as c

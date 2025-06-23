@@ -3,30 +3,8 @@
 from fastui import AnyComponent, components as c
 from fastui.events import GoToEvent, BackEvent
 
+from services.config import FrontendServiceConfig
 
-BASE_NAVBAR = c.Navbar(
-    title='DPSS UI',
-    title_event=GoToEvent(url='/'),
-    start_links=[
-        c.Link(
-            components=[c.Text(text='Отчеты')], on_click=GoToEvent(url='/reports/')
-        ),
-        c.Link(
-            components=[c.Text(text='Конфигурации сканирования')], on_click=GoToEvent(url='/scan/configs')
-        ),
-        c.Link(
-            components=[c.Text(text='База уязвимостей')], on_click=GoToEvent(url='/vulners/')
-        ),
-    ],
-    end_links = [
-        c.Link(
-            components=[c.Text(text='Авторизация')], on_click=BackEvent()
-        ),
-        c.Link(
-            components=[c.Text(text='Справка')], on_click=BackEvent()
-        ),
-    ],
-)
 
 def base_navbar() -> c.Navbar:
     return c.Navbar(
@@ -35,15 +13,15 @@ def base_navbar() -> c.Navbar:
         start_links=[
             c.Link(
                 components=[c.Text(text='База уязвимостей')],
-                on_click=GoToEvent(url='/vulners/')
+                on_click=GoToEvent(url=FrontendServiceConfig.get_vulners())
             ),
             c.Link(
                 components=[c.Text(text='Конфигурации сканирования')],
-                on_click=GoToEvent(url='/scan/configs')
+                on_click=GoToEvent(url=FrontendServiceConfig.get_scan_configs())
             ),
             c.Link(
                 components=[c.Text(text='Отчеты')],
-                on_click=GoToEvent(url='/reports/')
+                on_click=GoToEvent(url=FrontendServiceConfig.get_reports())
             ),
         ],
         end_links = [

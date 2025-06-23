@@ -17,7 +17,7 @@ from schemas.forms import (
 scan_router = APIRouter(prefix="/api/scan")
 
 
-@scan_router.get('/configs', response_model=FastUI, response_model_exclude_none=True)
+@scan_router.get('/configs/', response_model=FastUI, response_model_exclude_none=True)
 def get_scan_configs(page: int = 1, page_size: int = 7, scanner_service: ScannerService = Depends()) -> list[AnyComponent]:
     return scanner_service.get_scan_configs_view(page, page_size)
 
